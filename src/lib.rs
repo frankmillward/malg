@@ -1,7 +1,7 @@
 use num_traits::{Num, Zero};
 use std::ops::{Add, Sub};
 
-/// A generic m x n matrix
+/// An m-by-n matrix
 #[derive(Eq, PartialEq)]
 pub struct Matrix<const M: usize, const N: usize, T: Num + Copy> {
     data: [[T; N]; M],
@@ -30,7 +30,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Zero for Matrix<M, N, T> {
 
 impl<const M: usize, const N: usize, T: Num + Copy> Add for Matrix<M, N, T> {
     type Output = Self;
-    /// Natural defintion of matrix addition for type `T`
+    /// The natural definition of matrix addition for type `T`
     ///
     /// # Examples
     ///
@@ -56,11 +56,11 @@ impl<const M: usize, const N: usize, T: Num + Copy> Add for Matrix<M, N, T> {
 
 impl<const M: usize, const N: usize, T: Num + Copy> Sub for Matrix<M, N, T> {
     type Output = Self;
-    /// Natural defintion of matrix subtraction for type `T`
+    /// The natural defintion of matrix subtraction for type `T`
     ///
     /// # Examples
     ///
-    /// subtract one 2x2 matrix from another
+    /// Subtract one 2x2 matrix from another
     ///
     /// ```
     /// use malg::Matrix;
