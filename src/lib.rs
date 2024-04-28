@@ -5,7 +5,7 @@ use std::{
 };
 
 /// An m-by-n matrix
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Debug)]
 pub struct Matrix<const M: usize, const N: usize, T: Num + Copy> {
     data: [[T; N]; M],
 }
@@ -154,6 +154,30 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
     /// ```
     pub fn mut_entry(&mut self, i: NonZeroUsize, j: NonZeroUsize) -> Option<&mut T> {
         self.get_mut_entry(usize::from(i) - 1, usize::from(j) - 1)
+    }
+
+    /// Returns the transpose of a Matrix
+    ///
+    /// # Examples
+    ///
+    /// Get the transpose of a 2x3 matrix
+    ///
+    /// ```
+    /// # use::num_traits::*;
+    /// # use std::num::*;
+    /// use malg::Matrix;
+    /// let mut a = Matrix::<2,3,u8>::new([[1,2,3],[4,5,6]]);
+    /// let a_t = a.transpose();
+    /// assert_eq!(a_t, Matrix::<3,2,u8>::new([[1,4],[2,5],[3,6]]));
+    /// ```
+    pub fn transpose(&self) -> Matrix<N, M, T> {
+        let mut transpose = Matrix::<N, M, T>::zero();
+        for i in 0..N {
+            for j in 0..M {
+                transpose.data[i][j] = self.data[j][i];
+            }
+        }
+        transpose
     }
 }
 
