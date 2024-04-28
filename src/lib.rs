@@ -4,28 +4,28 @@ use std::{
     ops::{Add, Sub},
 };
 
-/// An m-by-n matrix
+/// An `M`-by-`N` matrix with entries of type `T`.
 #[derive(Eq, PartialEq, Debug)]
 pub struct Matrix<const M: usize, const N: usize, T: Num + Copy> {
     data: [[T; N]; M],
 }
 
 impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
-    /// Create a new [`Matrix`] from a 2-dimensional array.
+    /// Create a new [`Matrix`] from a nested array of arrays.
     pub fn new(data: [[T; N]; M]) -> Self {
         Matrix::<M, N, T> { data }
     }
 
-    /// Extracts a slice containing the entire matrix.
+    /// Return a borrow of the slice containing the entire matrix.
     pub fn as_slice(&self) -> &[[T; N]; M] {
         &self.data
     }
 
-    /// Return the number of rows in the matrix
+    /// Return the number of rows in the matrix, `M`.
     ///
     /// # Examples
     ///
-    /// Get the number of rows in a 3x4 rectangular `u8` matrix
+    /// Get the number of rows in a 3-by-4 rectangular `u8` matrix,
     ///
     /// ```
     /// # use::num_traits::*;
@@ -38,11 +38,11 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
         M
     }
 
-    /// Return the number of columns in the matrix
+    /// Return the number of columns in the matrix, `N`.
     ///
     /// # Examples
     ///
-    /// Get the number of columns in a 3x4 rectangular `u8` matrix
+    /// Get the number of columns in a 3-by-4 rectangular `u8` matrix,
     ///
     /// ```
     /// # use::num_traits::*;
@@ -55,12 +55,12 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
         N
     }
 
-    /// Get a borrow of a specific entry of the matrix using zero-based indexing.
+    /// Get a borrow of a specific entry of a matrix using zero-based indexing.
     /// If the indices lie outside of the matrix, get [`None`] instead.
     ///
     /// # Examples
     ///
-    /// We can get a reference to the (1,2)th entry of the 2x3 matrix `a`
+    /// We can get a reference to the (1, 2)<sup>th</sup> entry of the 2-by-3 matrix `a`,
     ///
     /// ```
     /// # use::num_traits::*;
@@ -70,7 +70,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
     /// assert_eq!(*a12, 2);
     /// ```
     ///
-    /// But trying to access the (3,2)th entry returns [`None`]
+    /// But trying to access the (3,2)<sup>th</sup> entry returns [`None`].
     ///
     /// ```
     /// # use::num_traits::*;
@@ -89,7 +89,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
     ///
     /// # Examples
     ///
-    /// We can get and modify a mutable reference to the (1,2)th entry of the 2x3 matrix `a`
+    /// We can get and modify a mutable reference to the (1,2)<sup>th</sup> entry of the 2-by-3 matrix `a`,
     ///
     /// ```
     /// # use::num_traits::*;
@@ -97,8 +97,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
     /// let mut a = Matrix::<2,3,u8>::new([[1,2,3],[4,5,6]]);
     /// let mut a12 = a.get_mut_entry(0,1).unwrap();
     /// *a12 = 10;
-    /// let a12_changed = a.get_entry(0,1).unwrap();
-    /// assert_eq!(*a12_changed, 10);
+    /// assert_eq!(a, Matrix::<2,3,u8>::new([[1,10,3],[4,5,6]]));
     /// ```
     pub fn get_mut_entry(&mut self, i: usize, j: usize) -> Option<&mut T> {
         let row = self.data.get_mut(i)?;
@@ -110,7 +109,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
     ///
     /// # Examples
     ///
-    /// We can get a reference to the (1,2)th entry of the 2x3 matrix `a`
+    /// We can get a reference to the (1,2)<sup>th</sup> entry of the 2-by-3 matrix `a`,
     ///
     /// ```
     /// # use num_traits::*;
@@ -121,7 +120,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
     /// assert_eq!(*a12, 2);
     /// ```
     ///
-    /// But trying to access the (3,2)th entry returns [`None`]
+    /// But trying to access the (3,2)<sup>th</sup> entry returns [`None`].
     ///
     /// ```
     /// # use::num_traits::*;
@@ -140,7 +139,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
     ///
     /// # Examples
     ///
-    /// We can get and modify a mutable reference to the (1,2)th entry of the 2x3 matrix `a`
+    /// We can get and modify a mutable reference to the (1,2)<sup>th</sup> entry of the 2-by-3 matrix `a`,
     ///
     /// ```
     /// # use::num_traits::*;
@@ -149,18 +148,17 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
     /// let mut a = Matrix::<2,3,u8>::new([[1,2,3],[4,5,6]]);
     /// let mut a12 = a.mut_entry(NonZeroUsize::new(1).unwrap(),NonZeroUsize::new(2).unwrap()).unwrap();
     /// *a12 = 10;
-    /// let a12_changed = a.entry(NonZeroUsize::new(1).unwrap(),NonZeroUsize::new(2).unwrap()).unwrap();
-    /// assert_eq!(*a12_changed, 10);
+    /// assert_eq!(a, Matrix::<2,3,u8>::new([[1,10,3],[4,5,6]]));
     /// ```
     pub fn mut_entry(&mut self, i: NonZeroUsize, j: NonZeroUsize) -> Option<&mut T> {
         self.get_mut_entry(usize::from(i) - 1, usize::from(j) - 1)
     }
 
-    /// Returns the transpose of a Matrix
+    /// Returns the transpose of a [`Matrix`].
     ///
     /// # Examples
     ///
-    /// Get the transpose of a 2x3 matrix
+    /// Get the transpose of a 2-by-3 matrix,
     ///
     /// ```
     /// # use::num_traits::*;
@@ -192,18 +190,18 @@ impl<const M: usize, const N: usize, T: Num + Copy> Zero for Matrix<M, N, T> {
 
 impl<const M: usize, const N: usize, T: Num + Copy> Add for Matrix<M, N, T> {
     type Output = Self;
-    /// The natural definition of matrix addition for type `T`
+    /// The natural definition of matrix addition for type `T`.
     ///
     /// # Examples
     ///
-    /// Add two 2x2 matrices
+    /// Add two 2-by-2 matrices,
     ///
     /// ```
     /// use malg::Matrix;
     /// let a = Matrix::<2,2,u8>::new([[1, 2], [3, 4]]);
     /// let b = Matrix::<2,2,u8>::new([[14, 5], [9, 2]]);
     /// let c = a + b;
-    /// assert_eq!(*c.as_slice(),[[15, 7], [12, 6]]);
+    /// assert_eq!(c, Matrix::<2,2,u8>::new([[15, 7], [12, 6]]));
     /// ```
     fn add(self, rhs: Self) -> Self::Output {
         let mut sum = self.data;
@@ -218,18 +216,18 @@ impl<const M: usize, const N: usize, T: Num + Copy> Add for Matrix<M, N, T> {
 
 impl<const M: usize, const N: usize, T: Num + Copy> Sub for Matrix<M, N, T> {
     type Output = Self;
-    /// The natural defintion of matrix subtraction for type `T`
+    /// The natural defintion of matrix subtraction for type `T`.
     ///
     /// # Examples
     ///
-    /// Subtract one 2x2 matrix from another
+    /// Subtract one 2-by-2 matrix from another,
     ///
     /// ```
     /// use malg::Matrix;
     /// let a = Matrix::<2,2,u8>::new([[7, 2], [9, 7]]);
     /// let b = Matrix::<2,2,u8>::new([[2, 1], [3, 3]]);
     /// let c = a - b;
-    /// assert_eq!(*c.as_slice(),[[5, 1], [6, 4]]);
+    /// assert_eq!(c,Matrix::<2,2,u8>::new([[5, 1], [6, 4]]));
     /// ```
     fn sub(self, rhs: Self) -> Self::Output {
         let mut difference = self.data;
