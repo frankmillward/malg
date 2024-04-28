@@ -1,5 +1,8 @@
 use num_traits::{Num, Zero};
-use std::ops::{Add, Sub};
+use std::{
+    num::NonZeroUsize,
+    ops::{Add, Sub},
+};
 
 /// An m-by-n matrix
 #[derive(Eq, PartialEq)]
@@ -100,6 +103,57 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
     pub fn get_mut_entry(&mut self, i: usize, j: usize) -> Option<&mut T> {
         let row = self.data.get_mut(i)?;
         row.get_mut(j)
+    }
+
+    /// Get a borrow of a specific entry of the matrix using one-based indexing.
+    /// If the indices lie outside of the matrix, get [`None`] instead.
+    ///
+    /// # Examples
+    ///
+    /// We can get a reference to the (1,2)th entry of the 2x3 matrix `a`
+    ///
+    /// ```
+    /// # use num_traits::*;
+    /// # use std::num::*;
+    /// use malg::Matrix;
+    /// let a = Matrix::<2,3,u8>::new([[1,2,3],[4,5,6]]);
+    /// let a12 = a.entry(NonZeroUsize::new(1).unwrap(),NonZeroUsize::new(2).unwrap()).unwrap();
+    /// assert_eq!(*a12, 2);
+    /// ```
+    ///
+    /// But trying to access the (3,2)th entry returns [`None`]
+    ///
+    /// ```
+    /// # use::num_traits::*;
+    /// # use std::num::*;
+    /// # use malg::Matrix;
+    /// # let a = Matrix::<2,3,u8>::new([[1,2,3],[4,5,6]]);
+    /// let a32 = a.entry(NonZeroUsize::new(3).unwrap(),NonZeroUsize::new(2).unwrap());
+    /// assert_eq!(a32, None);
+    /// ```
+    pub fn entry(&self, i: NonZeroUsize, j: NonZeroUsize) -> Option<&T> {
+        self.get_entry(usize::from(i) - 1, usize::from(j) - 1)
+    }
+
+    /// Get a mutable borrow of a specific entry of the matrix using one-based indexing.
+    /// If the indices lie outside of the matrix, get [`None`] instead.
+    ///
+    /// # Examples
+    ///
+    /// We can get and modify a mutable reference to the (1,2)th entry of the 2x3 matrix `a`
+    ///
+    /// ```
+    /// # use::num_traits::*;
+    /// # use std::num::*;
+    /// use malg::Matrix;
+    /// let mut a = Matrix::<2,3,u8>::new([[1,2,3],[4,5,6]]);
+    /// let mut a12 = a.mut_entry(NonZeroUsize::new(1).unwrap(),NonZeroUsize::new(2).unwrap()).unwrap();
+    /// *a12 = 10;
+    /// let a12_changed = a.entry(NonZeroUsize::new(1).unwrap(),NonZeroUsize::new(2).unwrap()).unwrap();
+    /// assert_eq!(*a12_changed, 10);
+    /// ```
+    pub fn mut_entry(&mut self, i: NonZeroUsize, j: NonZeroUsize) -> Option<&mut T> {
+        self.get_mut_entry(usize::from(i) - 1, usize::from(j) - 1)
     }
 }
 
