@@ -1,11 +1,11 @@
 use num_traits::{Num, Zero};
 use std::{
     num::NonZeroUsize,
-    ops::{Add, Sub},
+    ops::{Add, Mul, Sub},
 };
 
 /// An `M`-by-`N` matrix with entries of type `T`.
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy)]
 pub struct Matrix<const M: usize, const N: usize, T: Num + Copy> {
     data: [[T; N]; M],
 }
@@ -237,5 +237,61 @@ impl<const M: usize, const N: usize, T: Num + Copy> Sub for Matrix<M, N, T> {
             }
         }
         Matrix::<M, N, T>::new(difference)
+    }
+}
+
+impl<const M: usize, const N: usize, const P: usize, T: Num + Copy> Mul<Matrix<N, P, T>>
+    for Matrix<M, N, T>
+{
+    /// The natural definition of Matrix multiplication for type `T`.
+    ///
+    /// # Examples
+    ///
+    /// Mulitply a 2-by-3 and a 3-by-2 matrix, to get a 2-by-2 matrix.
+    ///
+    /// ```
+    /// # use malg::Matrix;
+    /// let a = Matrix::<2,3,u8>::new([[5, 1, 2], [7, 1, 2]]);
+    /// let b = Matrix::<3,2,u8>::new([[1, 2], [3, 4], [5, 6]]);
+    ///
+    /// let c: Matrix<2,2,u8> = a*b;
+    ///
+    /// assert_eq!(c, Matrix::<2,2,u8>::new([[18, 26], [20, 30]]))
+    /// ```
+    type Output = Matrix<M, P, T>;
+    fn mul(self, rhs: Matrix<N, P, T>) -> Self::Output {
+        let mut product = [[T::zero(); P]; M];
+        for i in 0..M {
+            for j in 0..P {
+                for k in 0..N {
+                    product[i][j] = product[i][j] + self.data[i][k] * rhs.data[k][j];
+                }
+            }
+        }
+        Matrix::<M, P, T>::new(product)
+    }
+}
+
+impl<const M: usize, const N: usize, T: Num + Copy> Mul<T> for Matrix<M, N, T> {
+    type Output = Matrix<M, N, T>;
+
+    /// Scale a matrix by post-multiplying by a scalar value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use malg::Matrix;
+    /// let a = Matrix::<2,3,u8>::new([[1, 2, 2], [3, 4, 6]]);
+    /// let b = a*2;
+    /// assert_eq!(b, Matrix::<2,3,u8>::new([[2, 4, 4], [6, 8, 12]]));
+    /// ```
+    fn mul(self, rhs: T) -> Self::Output {
+        let mut scaled = self.data;
+        for row in scaled.iter_mut() {
+            for entry in row.iter_mut() {
+                *entry = *entry * rhs
+            }
+        }
+        Matrix::<M, N, T>::new(scaled)
     }
 }
