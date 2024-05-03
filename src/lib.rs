@@ -4,6 +4,9 @@ use std::{
     ops::{Add, Mul, Sub},
 };
 
+mod square_matrix;
+pub use square_matrix::*;
+
 /// An `M`-by-`N` matrix with entries of type `T`.
 #[derive(Eq, PartialEq, Debug, Clone, Copy)]
 pub struct Matrix<const M: usize, const N: usize, T: Num + Copy> {
