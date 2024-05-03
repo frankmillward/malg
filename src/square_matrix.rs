@@ -2,7 +2,7 @@ use crate::Matrix;
 use num_traits::*;
 
 impl<const N: usize, T: Num + Copy> Matrix<N, N, T> {
-    /// Get the trace of a square matrix
+    /// The trace of a square matrix.
     ///
     /// # Examples
     ///
