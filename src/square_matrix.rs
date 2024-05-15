@@ -13,6 +13,13 @@ impl<const N: usize, T: MatrixEntry + Mul<Output = T>> Matrix<N, N, T> {
     /// let trace = a.trace();
     /// assert_eq!(trace,6)
     /// ```
+    ///
+    /// ```
+    /// # use malg::Matrix;
+    /// let b = Matrix::<1,1,u8>::new([[4]]);
+    /// let trace = b.trace();
+    /// assert_eq!(trace, 4)
+    /// ```
     pub fn trace(&self) -> T {
         let mut trace = self.data[0][0];
         for i in 1..N {
