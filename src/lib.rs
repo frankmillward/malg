@@ -7,24 +7,24 @@ use std::{
 mod square_matrix;
 pub use square_matrix::*;
 
-/// An `M`-by-`N` matrix with entries of type `T`.
+/// `M`-by-`N` rectangular matrix with entries of type `T`.
 #[derive(Eq, PartialEq, Debug, Clone, Copy)]
 pub struct Matrix<const M: usize, const N: usize, T: Num + Copy> {
     data: [[T; N]; M],
 }
 
 impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
-    /// Create a new [`Matrix`] from a nested array of arrays.
+    /// A new [`Matrix`] created from nested arrays.
     pub fn new(data: [[T; N]; M]) -> Self {
         Matrix::<M, N, T> { data }
     }
 
-    /// Return a borrow of the slice containing the entire matrix.
+    /// A slice containing the entire matrix as an array of rows.
     pub fn as_slice(&self) -> &[[T; N]; M] {
         &self.data
     }
 
-    /// Return the number of rows in the matrix, `M`.
+    /// The number of rows in the matrix, `M`.
     ///
     /// # Examples
     ///
@@ -41,7 +41,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
         M
     }
 
-    /// Return the number of columns in the matrix, `N`.
+    /// The number of columns in the matrix, `N`.
     ///
     /// # Examples
     ///
@@ -58,7 +58,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
         N
     }
 
-    /// Get a borrow of a specific entry of a matrix using zero-based indexing.
+    /// A specific entry of a matrix, accessed using zero-based indexing.
     /// If the indices lie outside of the matrix, get [`None`] instead.
     ///
     /// # Examples
@@ -87,7 +87,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
         row.get(j)
     }
 
-    /// Get a mutable borrow of a specific entry of the matrix using zero-based indexing.
+    /// A specific entry of the matrix, accessed using zero-based indexing.
     /// If the indices lie outside of the matrix, get [`None`] instead.
     ///
     /// # Examples
@@ -107,7 +107,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
         row.get_mut(j)
     }
 
-    /// Get a borrow of a specific entry of the matrix using one-based indexing.
+    /// A specific entry of the matrix, accessed using one-based indexing.
     /// If the indices lie outside of the matrix, get [`None`] instead.
     ///
     /// # Examples
@@ -137,7 +137,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
         self.get_entry(usize::from(i) - 1, usize::from(j) - 1)
     }
 
-    /// Get a mutable borrow of a specific entry of the matrix using one-based indexing.
+    /// A specific entry of the matrix, accessed using one-based indexing.
     /// If the indices lie outside of the matrix, get [`None`] instead.
     ///
     /// # Examples
@@ -157,7 +157,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
         self.get_mut_entry(usize::from(i) - 1, usize::from(j) - 1)
     }
 
-    /// Returns the transpose of a [`Matrix`].
+    /// The transpose of a [`Matrix`].
     ///
     /// # Examples
     ///
@@ -183,6 +183,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
 }
 
 impl<const M: usize, const N: usize, T: Num + Copy> Zero for Matrix<M, N, T> {
+    /// The matrix with all entries equal to zero.
     fn zero() -> Self {
         Matrix::<M, N, T>::new([[T::zero(); N]; M])
     }
@@ -193,7 +194,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Zero for Matrix<M, N, T> {
 
 impl<const M: usize, const N: usize, T: Num + Copy> Add for Matrix<M, N, T> {
     type Output = Self;
-    /// The natural definition of matrix addition for type `T`.
+    /// Natural definition of matrix addition for type `T`.
     ///
     /// # Examples
     ///
@@ -219,7 +220,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Add for Matrix<M, N, T> {
 
 impl<const M: usize, const N: usize, T: Num + Copy> Sub for Matrix<M, N, T> {
     type Output = Self;
-    /// The natural defintion of matrix subtraction for type `T`.
+    /// Natural definition of matrix subtraction for type `T`.
     ///
     /// # Examples
     ///
@@ -246,7 +247,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Sub for Matrix<M, N, T> {
 impl<const M: usize, const N: usize, const P: usize, T: Num + Copy> Mul<Matrix<N, P, T>>
     for Matrix<M, N, T>
 {
-    /// The natural definition of Matrix multiplication for type `T`.
+    /// Natural definition of Matrix multiplication for type `T`.
     ///
     /// # Examples
     ///
