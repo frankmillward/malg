@@ -1,7 +1,8 @@
-use crate::Matrix;
-use num_traits::*;
+use std::ops::Mul;
 
-impl<const N: usize, T: Num + Copy> Matrix<N, N, T> {
+use crate::{Matrix, MatrixEntry};
+
+impl<const N: usize, T: MatrixEntry + Mul<Output = T>> Matrix<N, N, T> {
     /// The trace of a square matrix.
     ///
     /// # Examples
@@ -12,9 +13,16 @@ impl<const N: usize, T: Num + Copy> Matrix<N, N, T> {
     /// let trace = a.trace();
     /// assert_eq!(trace,6)
     /// ```
+    ///
+    /// ```
+    /// # use malg::Matrix;
+    /// let b = Matrix::<1,1,u8>::new([[4]]);
+    /// let trace = b.trace();
+    /// assert_eq!(trace, 4)
+    /// ```
     pub fn trace(&self) -> T {
-        let mut trace = T::one();
-        for i in 0..N {
+        let mut trace = self.data[0][0];
+        for i in 1..N {
             trace = trace * self.data[i][i];
         }
         trace

@@ -1,19 +1,23 @@
-use num_traits::{Num, Zero};
+use num_traits::Zero;
 use std::{
     num::NonZeroUsize,
     ops::{Add, Mul, Sub},
 };
 
 mod square_matrix;
+#[allow(unused_imports)]
 pub use square_matrix::*;
+
+pub trait MatrixEntry: Copy + Default + PartialEq {}
+impl<T: Copy + Default + PartialEq> MatrixEntry for T {}
 
 /// `M`-by-`N` rectangular matrix with entries of type `T`.
 #[derive(Eq, PartialEq, Debug, Clone, Copy)]
-pub struct Matrix<const M: usize, const N: usize, T: Num + Copy> {
+pub struct Matrix<const M: usize, const N: usize, T: MatrixEntry> {
     data: [[T; N]; M],
 }
 
-impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
+impl<const M: usize, const N: usize, T: MatrixEntry> Matrix<M, N, T> {
     /// A new [`Matrix`] created from nested arrays.
     pub fn new(data: [[T; N]; M]) -> Self {
         Matrix::<M, N, T> { data }
@@ -172,17 +176,17 @@ impl<const M: usize, const N: usize, T: Num + Copy> Matrix<M, N, T> {
     /// assert_eq!(a_t, Matrix::<3,2,u8>::new([[1,4],[2,5],[3,6]]));
     /// ```
     pub fn transpose(&self) -> Matrix<N, M, T> {
-        let mut transpose = Matrix::<N, M, T>::zero();
-        for i in 0..N {
-            for j in 0..M {
-                transpose.data[i][j] = self.data[j][i];
+        let mut transpose_data = [[T::default(); M]; N];
+        for (i, row) in transpose_data.iter_mut().enumerate().take(N) {
+            for (j, entry) in row.iter_mut().enumerate().take(M) {
+                *entry = self.data[j][i];
             }
         }
-        transpose
+        Matrix::<N, M, T>::new(transpose_data)
     }
 }
 
-impl<const M: usize, const N: usize, T: Num + Copy> Zero for Matrix<M, N, T> {
+impl<const M: usize, const N: usize, T: MatrixEntry + Zero> Zero for Matrix<M, N, T> {
     /// The matrix with all entries equal to zero.
     fn zero() -> Self {
         Matrix::<M, N, T>::new([[T::zero(); N]; M])
@@ -192,7 +196,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Zero for Matrix<M, N, T> {
     }
 }
 
-impl<const M: usize, const N: usize, T: Num + Copy> Add for Matrix<M, N, T> {
+impl<const M: usize, const N: usize, T: MatrixEntry + Add<Output = T>> Add for Matrix<M, N, T> {
     type Output = Self;
     /// Natural definition of matrix addition for type `T`.
     ///
@@ -218,7 +222,7 @@ impl<const M: usize, const N: usize, T: Num + Copy> Add for Matrix<M, N, T> {
     }
 }
 
-impl<const M: usize, const N: usize, T: Num + Copy> Sub for Matrix<M, N, T> {
+impl<const M: usize, const N: usize, T: MatrixEntry + Sub<Output = T>> Sub for Matrix<M, N, T> {
     type Output = Self;
     /// Natural definition of matrix subtraction for type `T`.
     ///
@@ -244,8 +248,12 @@ impl<const M: usize, const N: usize, T: Num + Copy> Sub for Matrix<M, N, T> {
     }
 }
 
-impl<const M: usize, const N: usize, const P: usize, T: Num + Copy> Mul<Matrix<N, P, T>>
-    for Matrix<M, N, T>
+impl<
+        const M: usize,
+        const N: usize,
+        const P: usize,
+        T: MatrixEntry + Mul<Output = T> + Add<Output = T>,
+    > Mul<Matrix<N, P, T>> for Matrix<M, N, T>
 {
     /// Natural definition of Matrix multiplication for type `T`.
     ///
@@ -264,11 +272,11 @@ impl<const M: usize, const N: usize, const P: usize, T: Num + Copy> Mul<Matrix<N
     /// ```
     type Output = Matrix<M, P, T>;
     fn mul(self, rhs: Matrix<N, P, T>) -> Self::Output {
-        let mut product = [[T::zero(); P]; M];
-        for i in 0..M {
-            for j in 0..P {
+        let mut product = [[T::default(); P]; M];
+        for (i, row) in product.iter_mut().enumerate().take(M) {
+            for (j, entry) in row.iter_mut().enumerate().take(P) {
                 for k in 0..N {
-                    product[i][j] = product[i][j] + self.data[i][k] * rhs.data[k][j];
+                    *entry = *entry + self.data[i][k] * rhs.data[k][j];
                 }
             }
         }
@@ -276,7 +284,7 @@ impl<const M: usize, const N: usize, const P: usize, T: Num + Copy> Mul<Matrix<N
     }
 }
 
-impl<const M: usize, const N: usize, T: Num + Copy> Mul<T> for Matrix<M, N, T> {
+impl<const M: usize, const N: usize, T: MatrixEntry + Mul<Output = T>> Mul<T> for Matrix<M, N, T> {
     type Output = Matrix<M, N, T>;
 
     /// Scale a matrix by post-multiplying by a scalar value
