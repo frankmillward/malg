@@ -177,9 +177,9 @@ impl<const M: usize, const N: usize, T: MatrixEntry> Matrix<M, N, T> {
     /// ```
     pub fn transpose(&self) -> Matrix<N, M, T> {
         let mut transpose_data = [[T::default(); M]; N];
-        for i in 0..N {
-            for j in 0..M {
-                transpose_data[i][j] = self.data[j][i];
+        for (i, row) in transpose_data.iter_mut().enumerate().take(N) {
+            for (j, entry) in row.iter_mut().enumerate().take(M) {
+                *entry = self.data[j][i];
             }
         }
         Matrix::<N, M, T>::new(transpose_data)
@@ -273,10 +273,10 @@ impl<
     type Output = Matrix<M, P, T>;
     fn mul(self, rhs: Matrix<N, P, T>) -> Self::Output {
         let mut product = [[T::default(); P]; M];
-        for i in 0..M {
-            for j in 0..P {
+        for (i, row) in product.iter_mut().enumerate().take(M) {
+            for (j, entry) in row.iter_mut().enumerate().take(P) {
                 for k in 0..N {
-                    product[i][j] = product[i][j] + self.data[i][k] * rhs.data[k][j];
+                    *entry = *entry + self.data[i][k] * rhs.data[k][j];
                 }
             }
         }
