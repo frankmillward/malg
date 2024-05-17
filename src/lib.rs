@@ -4,6 +4,10 @@ use std::{
     ops::{Add, Mul, Sub},
 };
 
+mod row_operations;
+#[allow(unused_imports)]
+pub use row_operations::*;
+
 mod square_matrix;
 #[allow(unused_imports)]
 pub use square_matrix::*;
@@ -305,5 +309,107 @@ impl<const M: usize, const N: usize, T: MatrixEntry + Mul<Output = T>> Mul<T> fo
             }
         }
         Matrix::<M, N, T>::new(scaled)
+    }
+}
+
+impl<const M: usize, const N: usize, T: MatrixEntry + Mul<Output = T> + Add<Output = T>> RowOps<T>
+    for Matrix<M, N, T>
+{
+    /// Swap rows `i` and `j` in place.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if `i` or `j` are out of bounds. That is `i>=M` or `j>=N`.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// # use crate::malg::RowOps;
+    /// # use::num_traits::*;
+    /// use malg::Matrix;
+    /// let mut a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
+    /// let b = Matrix::<3,2,u8>::new([[1,2], [5,6], [3,4]]);
+    ///
+    /// a.swap_rows(1,2);
+    ///
+    /// assert_eq!(a,b)
+    /// ```
+    fn swap_rows(&mut self, i: usize, j: usize) {
+        self.data.swap(i, j);
+    }
+    /// Scale row `i` by scalar value `a` in place.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if `i` is out of bounds. That is `i>=M`.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// # use crate::malg::RowOps;
+    /// # use::num_traits::*;
+    /// use malg::Matrix;
+    /// let mut a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
+    /// let b = Matrix::<3,2,u8>::new([[1,2], [6,8], [5,6]]);
+    ///
+    /// a.scale_row(1,2);
+    ///
+    /// assert_eq!(a,b)
+    ///
+    /// ```
+    ///
+    fn scale_row(&mut self, i: usize, a: T) {
+        self.data[i]
+            .iter_mut()
+            .for_each(|entry| *entry = *entry * a);
+    }
+    /// Replace row `i` with the sum of row `i` and `a` times row `j`.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if `i` or `j` are out of bounds. That is `i>=M` or `j>=N`.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// # use crate::malg::RowOps;
+    /// # use::num_traits::*;
+    /// use malg::Matrix;
+    /// let mut a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
+    /// let b = Matrix::<3,2,u8>::new([[1,2], [3,4], [7,10]]);
+    ///
+    /// a.add_rows(2,0,2);
+    ///
+    /// assert_eq!(a,b)
+    ///
+    /// ```
+    ///
+    fn add_rows(&mut self, i: usize, j: usize, a: T) {
+        let add_row: Vec<T> = self.data[j].iter().map(|entry| *entry * a).collect();
+        self.data[i]
+            .iter_mut()
+            .zip(add_row)
+            .for_each(|(entry_i, entry_j): (&mut T, T)| *entry_i = *entry_i + entry_j);
+    }
+    /// The `ì`th row of `self`/
+    ///
+    /// ## Panics
+    ///
+    /// Panics if `i` is out of bounds. That is `i>=M`.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// # use crate::malg::RowOps;
+    /// # use::num_traits::*;
+    /// use malg::Matrix;
+    /// let mut a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
+    ///
+    /// let row = a.get_row(1);
+    ///
+    /// assert_eq!(row, vec![3, 4])
+    /// ```
+    fn get_row(&self, i: usize) -> Vec<T> {
+        self.data[i].into()
     }
 }
