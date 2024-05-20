@@ -3,21 +3,24 @@ use std::ops::Mul;
 
 use crate::{Matrix, MatrixEntry};
 
-impl<const N: usize, T: MatrixEntry + Mul<Output = T>> Matrix<N, N, T> {
+/// `N`-by-`N` square matrix with entries of type `T`.
+pub type SquareMatrix<const N: usize, T> = Matrix<N, N, T>;
+
+impl<const N: usize, T: MatrixEntry + Mul<Output = T>> SquareMatrix<N, T> {
     /// The trace of a square matrix.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use malg::Matrix;
-    /// let a = Matrix::<3,3,u8>::new([[1, 2, 3], [1, 2, 3], [1, 2,3]]);
+    /// # use malg::SquareMatrix;
+    /// let a = SquareMatrix::<3,u8>::new([[1, 2, 3], [1, 2, 3], [1, 2,3]]);
     /// let trace = a.trace();
     /// assert_eq!(trace,6)
     /// ```
     ///
     /// ```
-    /// # use malg::Matrix;
-    /// let b = Matrix::<1,1,u8>::new([[4]]);
+    /// # use malg::SquareMatrix;
+    /// let b = SquareMatrix::<1,u8>::new([[4]]);
     /// let trace = b.trace();
     /// assert_eq!(trace, 4)
     /// ```
@@ -30,15 +33,15 @@ impl<const N: usize, T: MatrixEntry + Mul<Output = T>> Matrix<N, N, T> {
     }
 }
 
-impl<const N: usize, T: MatrixEntry + One + Zero> One for Matrix<N, N, T> {
+impl<const N: usize, T: MatrixEntry + One + Zero> One for SquareMatrix<N, T> {
     /// The N-by-N identity matrix
     ///
     /// # Examples
     ///
     /// ```
     /// # use num_traits::*;
-    /// # use malg::Matrix;
-    /// let identity = Matrix::<3,3,u8>::new([[1, 0, 0], [0, 1, 0], [0, 0, 1]]);
+    /// # use malg::{SquareMatrix, Matrix};
+    /// let identity = SquareMatrix::<3,u8>::new([[1, 0, 0], [0, 1, 0], [0, 0, 1]]);
     /// assert_eq!(Matrix::<3,3,u8>::one(), identity)
     /// ```
     fn one() -> Self {
