@@ -12,6 +12,11 @@ mod square_matrix;
 #[allow(unused_imports)]
 pub use square_matrix::*;
 
+mod augmented_matrix;
+#[allow(unused_imports)]
+pub use augmented_matrix::*;
+
+/// Minimum trait bounds for a type to be extendable as a [`Matrix`].
 pub trait MatrixEntry: Copy + Default + PartialEq {}
 impl<T: Copy + Default + PartialEq> MatrixEntry for T {}
 
@@ -187,6 +192,11 @@ impl<const M: usize, const N: usize, T: MatrixEntry> Matrix<M, N, T> {
             }
         }
         Matrix::<N, M, T>::new(transpose_data)
+    }
+
+    /// Append the matrix `right` onto `self`, creating the augmented matrix `[self|right]`.
+    pub fn augment<const P: usize>(&self, right: &Matrix<M, P, T>) -> AugmentedMatrix<M, N, P, T> {
+        AugmentedMatrix::<M, N, P, T>::new(*self, *right)
     }
 }
 
