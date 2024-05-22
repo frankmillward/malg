@@ -15,6 +15,14 @@ impl<const M: usize, const N: usize, const P: usize, T: MatrixEntry> AugmentedMa
     pub fn new(a: Matrix<M, N, T>, b: Matrix<M, P, T>) -> AugmentedMatrix<M, N, P, T> {
         AugmentedMatrix::<M, N, P, T> { left: a, right: b }
     }
+    /// Left hand part of the augmented matrix.
+    pub fn get_left(&self) -> &Matrix<M, N, T> {
+        &self.left
+    }
+    /// Right hand part of the augmented matrix.
+    pub fn get_right(&self) -> &Matrix<M, P, T> {
+        &self.right
+    }
 }
 
 impl<
