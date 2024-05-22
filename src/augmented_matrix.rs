@@ -1,4 +1,3 @@
-use num_traits::{One, Zero};
 use std::ops::{Add, Mul};
 
 use crate::{Matrix, MatrixEntry, RowOps};
@@ -151,5 +150,37 @@ impl<
     /// ```
     fn get_row(&self, i: usize) -> Vec<T> {
         self.left.get_row(i)
+    }
+    /// The number of rows in the left part of the matrix, `M`.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// # use malg::*;
+    /// let a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
+    /// let b = Matrix::<3,2,u8>::new([[1,2], [2,3], [3,4]]);
+    ///
+    /// let number_of_rows = a.augment(&b).n_rows();
+    ///
+    /// assert_eq!(number_of_rows, 3)
+    /// ```
+    fn n_rows(&self) -> usize {
+        M
+    }
+    /// The number of rows in the right part of the matrix, `N`.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// # use malg::*;
+    /// let a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
+    /// let b = Matrix::<3,1,u8>::new([[1], [2], [3]]);
+    ///
+    /// let number_of_columns = a.augment(&b).n_cols();
+    ///
+    /// assert_eq!(number_of_columns, 2)
+    /// ```
+    fn n_cols(&self) -> usize {
+        N
     }
 }

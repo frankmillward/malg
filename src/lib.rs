@@ -37,40 +37,6 @@ impl<const M: usize, const N: usize, T: MatrixEntry> Matrix<M, N, T> {
         &self.data
     }
 
-    /// The number of rows in the matrix, `M`.
-    ///
-    /// # Examples
-    ///
-    /// Get the number of rows in a 3-by-4 rectangular `u8` matrix,
-    ///
-    /// ```
-    /// # use::num_traits::*;
-    /// use malg::Matrix;
-    /// let a = Matrix::<3,4,u8>::zero();
-    /// let n_rows = a.n_rows();
-    /// assert_eq!(n_rows, 3);
-    /// ```
-    pub fn n_rows(&self) -> usize {
-        M
-    }
-
-    /// The number of columns in the matrix, `N`.
-    ///
-    /// # Examples
-    ///
-    /// Get the number of columns in a 3-by-4 rectangular `u8` matrix,
-    ///
-    /// ```
-    /// # use::num_traits::*;
-    /// use malg::Matrix;
-    /// let a = Matrix::<3,4,u8>::zero();
-    /// let n_cols = a.n_cols();
-    /// assert_eq!(n_cols, 4);
-    /// ```
-    pub fn n_cols(&self) -> usize {
-        N
-    }
-
     /// A specific entry of a matrix, accessed using zero-based indexing.
     /// If the indices lie outside of the matrix, get [`None`] instead.
     ///
@@ -334,9 +300,8 @@ impl<const M: usize, const N: usize, T: MatrixEntry + Mul<Output = T> + Add<Outp
     /// ## Examples
     ///
     /// ```
-    /// # use crate::malg::RowOps;
     /// # use::num_traits::*;
-    /// use malg::Matrix;
+    /// use malg::*;
     /// let mut a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
     /// let b = Matrix::<3,2,u8>::new([[1,2], [5,6], [3,4]]);
     ///
@@ -356,9 +321,8 @@ impl<const M: usize, const N: usize, T: MatrixEntry + Mul<Output = T> + Add<Outp
     /// ## Examples
     ///
     /// ```
-    /// # use crate::malg::RowOps;
     /// # use::num_traits::*;
-    /// use malg::Matrix;
+    /// use malg::*;
     /// let mut a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
     /// let b = Matrix::<3,2,u8>::new([[1,2], [6,8], [5,6]]);
     ///
@@ -382,9 +346,8 @@ impl<const M: usize, const N: usize, T: MatrixEntry + Mul<Output = T> + Add<Outp
     /// ## Examples
     ///
     /// ```
-    /// # use crate::malg::RowOps;
     /// # use::num_traits::*;
-    /// use malg::Matrix;
+    /// use malg::*;
     /// let mut a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
     /// let b = Matrix::<3,2,u8>::new([[1,2], [3,4], [7,10]]);
     ///
@@ -410,9 +373,8 @@ impl<const M: usize, const N: usize, T: MatrixEntry + Mul<Output = T> + Add<Outp
     /// ## Examples
     ///
     /// ```
-    /// # use crate::malg::RowOps;
     /// # use::num_traits::*;
-    /// use malg::Matrix;
+    /// use malg::*;
     /// let mut a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
     ///
     /// let row = a.get_row(1);
@@ -421,5 +383,38 @@ impl<const M: usize, const N: usize, T: MatrixEntry + Mul<Output = T> + Add<Outp
     /// ```
     fn get_row(&self, i: usize) -> Vec<T> {
         self.data[i].into()
+    }
+    /// The number of rows in the matrix, `M`.
+    ///
+    /// # Examples
+    ///
+    /// Get the number of rows in a 3-by-4 rectangular `u8` matrix,
+    ///
+    /// ```
+    /// # use::num_traits::*;
+    /// use malg::*;
+    /// let a = Matrix::<3,4,u8>::zero();
+    /// let n_rows = a.n_rows();
+    /// assert_eq!(n_rows, 3);
+    /// ```
+    fn n_rows(&self) -> usize {
+        M
+    }
+
+    /// The number of columns in the matrix, `N`.
+    ///
+    /// # Examples
+    ///
+    /// Get the number of columns in a 3-by-4 rectangular `u8` matrix,
+    ///
+    /// ```
+    /// # use::num_traits::*;
+    /// use malg::*;
+    /// let a = Matrix::<3,4,u8>::zero();
+    /// let n_cols = a.n_cols();
+    /// assert_eq!(n_cols, 4);
+    /// ```
+    fn n_cols(&self) -> usize {
+        N
     }
 }

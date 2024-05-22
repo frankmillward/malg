@@ -12,4 +12,8 @@ pub trait RowOps<Scalar: MatrixEntry + Mul<Output = Scalar> + Add<Output = Scala
     fn add_rows(&mut self, i: usize, j: usize, a: Scalar);
     /// The `i`th row of `self`.
     fn get_row(&self, i: usize) -> Vec<Scalar>;
+    /// Number of rows in `self`
+    fn n_rows(&self) -> usize;
+    /// Number of columns in `self`
+    fn n_cols(&self) -> usize;
 }
