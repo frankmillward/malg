@@ -36,7 +36,30 @@ impl<
     ///
     /// ## Panics
     ///
-    /// Panics if `i` or `j` are out of bounds. That is `i>=M` or `j>=N`.
+    /// Panics if `i` or `j` are out of bounds. That is `i>=M` or `j>=M`.
+    ///
+    /// ## Examples
+    ///
+    /// Swapping the rows of an augmented matrix affects both the left and right parts.
+    ///
+    /// ```
+    /// # use crate::malg::RowOps;
+    /// # use::num_traits::*;
+    /// # use malg::Matrix;
+    /// let a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
+    /// let b = Matrix::<3,1,u8>::new([[1], [2], [3]]);
+    ///
+    /// let a_swapped = Matrix::<3,2,u8>::new([[3,4], [1,2], [5,6]]);
+    /// let b_swapped = Matrix::<3,1,u8>::new([[2], [1], [3]]);
+    ///
+    /// let mut c = a.augment(&b);
+    /// let c_swapped = a_swapped.augment(&b_swapped);
+    ///
+    /// c.swap_rows(0,1);
+    ///
+    /// assert_eq!(c, c_swapped)
+    ///
+    /// ```
     fn swap_rows(&mut self, i: usize, j: usize) {
         self.left.swap_rows(i, j);
         self.right.swap_rows(i, j);
@@ -46,6 +69,29 @@ impl<
     /// ## Panics
     ///
     /// Panics if `i` is out of bounds. That is `i>=M`.
+    ///
+    /// ## Examples
+    ///
+    /// Scaling a row of an augmented matrix scales both the left and right parts.
+    ///
+    /// ```
+    /// # use crate::malg::RowOps;
+    /// # use::num_traits::*;
+    /// # use malg::Matrix;
+    /// let a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
+    /// let b = Matrix::<3,1,u8>::new([[1], [2], [3]]);
+    ///
+    /// let a_scaled = Matrix::<3,2,u8>::new([[1,2], [6,8], [5,6]]);
+    /// let b_scaled = Matrix::<3,1,u8>::new([[1], [4], [3]]);
+    ///
+    /// let mut c = a.augment(&b);
+    /// let c_scaled = a_scaled.augment(&b_scaled);
+    ///
+    /// c.scale_row(1,2);
+    ///
+    /// assert_eq!(c, c_scaled)
+    ///
+    /// ```
     fn scale_row(&mut self, i: usize, a: T) {
         self.left.scale_row(i, a);
         self.right.scale_row(i, a);
@@ -54,7 +100,30 @@ impl<
     ///
     /// ## Panics
     ///
-    /// Panics if `i` or `j` are out of bounds. That is `i>=M` or `j>=N`.``
+    /// Panics if `i` or `j` are out of bounds. That is `i>=M` or `j>=M`.
+    ///
+    /// ## Examples
+    ///
+    /// Summing the rows of an augmented matrix affects both the left and right parts.
+    ///
+    /// ```
+    /// # use crate::malg::RowOps;
+    /// # use::num_traits::*;
+    /// # use malg::Matrix;
+    /// let a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
+    /// let b = Matrix::<3,1,u8>::new([[1], [2], [3]]);
+    ///
+    /// let a_summed = Matrix::<3,2,u8>::new([[1,2], [3,4], [7,10]]);
+    /// let b_summed = Matrix::<3,1,u8>::new([[1], [2], [5]]);
+    ///
+    /// let mut c = a.augment(&b);
+    /// let c_summed = a_summed.augment(&b_summed);
+    ///
+    /// c.add_rows(2,0,2);
+    ///
+    /// assert_eq!(c, c_summed)
+    ///
+    /// ```
     fn add_rows(&mut self, i: usize, j: usize, a: T) {
         self.left.add_rows(i, j, a);
         self.right.add_rows(i, j, a);
@@ -64,6 +133,22 @@ impl<
     /// ## Panics
     ///
     /// Panics if `i` is out of bounds. That is `i>=M`.
+    ///
+    /// ## Examples
+    ///
+    /// `get_row` returns only the left part of the augmented matrix.
+    ///
+    /// ```
+    /// # use crate::malg::RowOps;
+    /// # use::num_traits::*;
+    /// # use malg::Matrix;
+    /// let a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
+    /// let b = Matrix::<3,1,u8>::new([[1], [2], [3]]);
+    ///
+    /// let row = a.augment(&b).get_row(1);
+    ///
+    /// assert_eq!(row, vec![3,4])
+    /// ```
     fn get_row(&self, i: usize) -> Vec<T> {
         self.left.get_row(i)
     }
