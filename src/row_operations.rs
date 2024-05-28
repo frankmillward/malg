@@ -1,9 +1,11 @@
-use std::ops::{Add, Mul};
+use std::ops::{Div, Sub};
+
+use num_traits::{One, Zero};
 
 use crate::MatrixEntry;
 
 /// Provides a set of elementary row operations for an object, where elements of the object are scaled by type `Scalar`
-pub trait RowOps<Scalar: MatrixEntry + Mul<Output = Scalar> + Add<Output = Scalar>> {
+pub trait RowOps<Scalar: MatrixEntry + Div<Output = Scalar> + Sub<Output = Scalar> + Zero + One> {
     /// Swap rows `i` and `j` in place.
     fn swap_rows(&mut self, i: usize, j: usize);
     /// Scale row `i` by scalar value `a` in place.

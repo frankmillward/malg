@@ -1,7 +1,7 @@
-use num_traits::Zero;
+use num_traits::{One, Zero};
 use std::{
     num::NonZeroUsize,
-    ops::{Add, Mul, Sub},
+    ops::{Add, Div, Mul, Sub},
 };
 
 mod row_operations;
@@ -288,8 +288,11 @@ impl<const M: usize, const N: usize, T: MatrixEntry + Mul<Output = T>> Mul<T> fo
     }
 }
 
-impl<const M: usize, const N: usize, T: MatrixEntry + Mul<Output = T> + Add<Output = T>> RowOps<T>
-    for Matrix<M, N, T>
+impl<
+        const M: usize,
+        const N: usize,
+        T: MatrixEntry + Div<Output = T> + Sub<Output = T> + Zero + One,
+    > RowOps<T> for Matrix<M, N, T>
 {
     /// Swap rows `i` and `j` in place.
     ///
