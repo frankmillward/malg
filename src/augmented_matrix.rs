@@ -1,4 +1,6 @@
-use std::ops::{Add, Mul};
+use std::ops::{Div, Sub};
+
+use num_traits::{One, Zero};
 
 use crate::{Matrix, MatrixEntry, RowOps};
 
@@ -28,7 +30,7 @@ impl<
         const M: usize,
         const N: usize,
         const P: usize,
-        T: MatrixEntry + Mul<Output = T> + Add<Output = T>,
+        T: MatrixEntry + Div<Output = T> + Sub<Output = T> + Zero + One,
     > RowOps<T> for AugmentedMatrix<M, N, P, T>
 {
     /// Swap rows `i` and `j` in place.
