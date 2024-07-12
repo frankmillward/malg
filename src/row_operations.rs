@@ -1,107 +1,120 @@
-use std::ops::{Div, Sub};
+use crate::ScalarMatrixEntry;
+use num_traits::Zero;
+use std::ops::{Add, Div, Mul, Sub};
 
-use num_traits::{One, Zero};
+// TODO: Row or RowVector struct which can be used to tighten up RowOps API
 
-use crate::MatrixEntry;
-
-/// Provides a set of elementary row operations for an object, where elements of the object are scaled by type `Scalar`
-pub trait RowOps<Scalar: MatrixEntry + Div<Output = Scalar> + Sub<Output = Scalar> + Zero + One> {
-    /// Swap rows `i` and `j` in place.
-    fn swap_rows(&mut self, i: usize, j: usize);
-    /// Scale row `i` by scalar value `a` in place.
-    fn scale_row(&mut self, i: usize, a: Scalar);
-    /// Replace row `i` with the sum of row `i` and `a` times row `j`.
-    fn add_rows(&mut self, i: usize, j: usize, a: Scalar);
-    /// The `i`th row of `self`.
-    fn get_row(&self, i: usize) -> Vec<Scalar>;
-    /// Number of rows in `self`
-    fn n_rows(&self) -> usize;
-    /// Number of columns in `self`
-    fn n_cols(&self) -> usize;
-    /// Calculate the row echelon form of `self` in place.
-    fn transform_to_row_echelon_form(&mut self) {
-        let mut i = 0;
-        for j in 0..self.n_cols() {
-            let mut pivot_found = false;
-            for k in i..self.n_rows() {
-                if !self.get_row(k)[j].is_zero() {
-                    if pivot_found {
-                        let leading_entry = self.get_row(k)[j];
-                        self.add_rows(k, i, Scalar::zero() - Scalar::one() * leading_entry);
+/// Behaviours associated with an object constructed of [`RowVector`](`crate::RowVector`)s
+pub trait RowOps<const N: usize, T: ScalarMatrixEntry>: Sized {
+    /// The rows of `self`.
+    fn as_rows<'a>(&'a self) -> impl Iterator<Item = &'a [T; N]>
+    where
+        T: 'a;
+    /// The rows of `self`.
+    fn as_mut_rows<'a>(&'a mut self) -> impl Iterator<Item = &'a mut [T; N]>
+    where
+        T: 'a;
+    ///
+    fn into_rows(self) -> impl Iterator<Item = [T; N]>;
+    fn from_rows(rows: impl Iterator<Item = [T; N]>) -> Option<Self>;
+    /// True if `self` is in row echelon form.
+    fn is_row_echelon(&self) -> bool {
+        let mut is_row_echelon = true;
+        let mut pivot_index: usize = 0;
+        'outer: for (row_index, row) in self.as_rows().enumerate() {
+            'inner: for (column_index, entry) in row.iter().enumerate() {
+                if !entry.is_zero() {
+                    if !entry.is_one() || column_index <= pivot_index && row_index != 0 {
+                        is_row_echelon = false;
+                        break 'outer;
                     } else {
+                        pivot_index = column_index;
+                        break 'inner;
+                    }
+                }
+            }
+        }
+        is_row_echelon
+    }
+    /// True if `self` is in reduced row echelon form.
+    fn is_reduced_row_echelon(&self) -> bool {
+        if self.is_row_echelon() {
+            let mut is_reduced_row_echelon = true;
+            let mut leading_row_index = 0;
+            let rows = self.as_rows().collect::<Vec<&[T; N]>>();
+            for column_index in 0..N {
+                let column_sum: usize = self.as_rows().fold(usize::zero(), |acc, x| {
+                    acc + <bool as Into<usize>>::into(!x[column_index].is_zero())
+                });
+                if !rows[leading_row_index][column_index].is_zero() && column_sum > 1 {
+                    is_reduced_row_echelon = false;
+                    break;
+                } else if rows[leading_row_index][column_index].is_one() {
+                    leading_row_index += 1;
+                }
+            }
+            is_reduced_row_echelon
+        } else {
+            false
+        }
+    }
+    /// `self` in row echelon form.
+    fn into_row_echelon(self) -> Self {
+        let mut leading_row_index = 0;
+        let mut rows = self.into_rows().collect::<Vec<[T; N]>>();
+        for pivot_index in 0..N {
+            let mut pivot_found = false;
+            for row_index in leading_row_index..rows.len() {
+                if !rows[row_index][pivot_index].is_zero() {
+                    if !pivot_found {
                         pivot_found = true;
-                        self.swap_rows(i, k);
-                        let pivot_value = self.get_row(i)[j];
-                        self.scale_row(i, Scalar::one() / pivot_value);
+                        rows.swap(leading_row_index, row_index);
+                        rows[leading_row_index] = rows[leading_row_index]
+                            .map(|entry| entry / rows[leading_row_index][pivot_index]);
+                    } else {
+                        let leading_row = rows[leading_row_index].clone();
+                        let leading_entry = rows[row_index][pivot_index];
+                        rows[row_index]
+                            .iter_mut()
+                            .zip(leading_row)
+                            .for_each(|(a, b)| *a = *a - b * leading_entry)
                     }
                 }
             }
             if pivot_found {
-                i += 1;
+                leading_row_index += 1;
             }
         }
+        Self::from_rows(rows.into_iter()).unwrap()
+    }
+    /// `self` in reduced row echelon form.
+    fn into_reduced_row_echelon(self) -> Self {
+        let row_echelon_form = self.into_row_echelon();
+        let mut rows = row_echelon_form.into_rows().collect::<Vec<[T; N]>>();
+        for pivot_column_index in 0..N {
+            let mut pivot_found = false;
+            let mut pivot_row = [T::zero(); N];
+            for row_index in 0..rows.len() {
+                let pivot_row_index = rows.len() - 1 - row_index;
+                if !rows[pivot_row_index][pivot_column_index].is_zero() {
+                    if !pivot_found {
+                        pivot_found = true;
+                        pivot_row = rows[pivot_row_index].clone();
+                    } else {
+                        let non_zero_entry = rows[pivot_row_index][pivot_column_index];
+                        rows[pivot_row_index]
+                            .iter_mut()
+                            .zip(pivot_row)
+                            .for_each(|(a, b)| *a = *a - b * non_zero_entry);
+                    }
+                }
+            }
+        }
+        Self::from_rows(rows.into_iter()).unwrap()
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use std::error::Error;
-
-    use crate::*;
-    /// Check we can find a row-echelon form of a diagonal [`Matrix`]
-    #[test]
-    fn check_diagonal_matrix_row_echelon_form() -> Result<(), Box<dyn Error>> {
-        let mut input_matrix =
-            Matrix::<3, 3, f32>::new([[3.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 1.0]]);
-        let target_matrix =
-            Matrix::<3, 3, f32>::new([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]);
-        input_matrix.transform_to_row_echelon_form();
-        assert_eq!(input_matrix, target_matrix);
-        Ok(())
-    }
-    ///  [`Matrix`] of full rank.
-    #[test]
-    fn check_full_rank_matrix_row_echelon_form() -> Result<(), Box<dyn Error>> {
-        let mut input_matrix = Matrix::<3, 4, f32>::new([
-            [3.0, 3.0, 2.0, 1.0],
-            [1.0, 2.0, 6.0, 0.0],
-            [1.0, 0.0, 1.0, 0.0],
-        ]);
-        input_matrix.transform_to_row_echelon_form();
-        assert!(
-            input_matrix.get_entry(0, 0).expect("No value").is_one()
-                && input_matrix.get_entry(1, 0).expect("No value").is_zero()
-                && input_matrix.get_entry(1, 1).expect("No value").is_one()
-                && input_matrix.get_entry(2, 0).expect("No value").is_zero()
-                && input_matrix.get_entry(2, 1).expect("No value").is_zero()
-                && input_matrix.get_entry(2, 2).expect("No value").is_one()
-        );
-        Ok(())
-    }
-    /// Check we can find a row echelon form of a rectangular, non-square [`Matrix`] of partial rank
-    #[test]
-    fn check_partial_rank_matrix_row_echelon_form() -> Result<(), Box<dyn Error>> {
-        let mut input_matrix = Matrix::<4, 3, f32>::new([
-            [3.0, 3.0, 3.0],
-            [1.0, 2.0, 6.0],
-            [2.0, 0.0, 2.0],
-            [4.0, 0.0, 4.0],
-        ]);
-        input_matrix.transform_to_row_echelon_form();
-        assert!(
-            input_matrix.get_entry(0, 0).expect("No value").is_one()
-                && input_matrix.get_entry(1, 0).expect("No value").is_zero()
-                && input_matrix.get_entry(1, 1).expect("No value").is_one()
-                && input_matrix.get_entry(2, 0).expect("No value").is_zero()
-                && input_matrix.get_entry(2, 1).expect("No value").is_zero()
-                && input_matrix.get_entry(2, 2).expect("No value").is_one()
-                && input_matrix
-                    .get_row(3)
-                    .iter()
-                    .map(|a| a.is_zero())
-                    .reduce(|acc, e| acc && e)
-                    .expect("No value")
-        );
-        Ok(())
-    }
+/// A row vector
+pub trait Row<const N: usize, T: ScalarMatrixEntry>: Add + Sub + Div<T> + Mul<T> + Sized {
+    fn as_array(&self) -> &[T; N];
 }

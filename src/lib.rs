@@ -1,5 +1,6 @@
-use num_traits::{One, Zero};
+use num_traits::{One, Signed, Zero};
 use std::{
+    fmt::Debug,
     num::NonZeroUsize,
     ops::{Add, Div, Mul, Sub},
 };
@@ -17,8 +18,20 @@ mod augmented_matrix;
 pub use augmented_matrix::*;
 
 /// Minimum trait bounds for a type to be extendable as a [`Matrix`].
+///
+/// Types implementing [`MatrixEntry`] may be considered as elements of a set.
 pub trait MatrixEntry: Copy + Default + PartialEq {}
 impl<T: Copy + Default + PartialEq> MatrixEntry for T {}
+
+/// Types implementing [`ScalarMatrixEntry`] are elements of a vector field.
+pub trait ScalarMatrixEntry:
+    MatrixEntry + Div<Output = Self> + Sub<Output = Self> + Zero + One + Signed + Debug
+{
+}
+impl<T: MatrixEntry + Div<Output = Self> + Sub<Output = Self> + Zero + One + Signed + Debug>
+    ScalarMatrixEntry for T
+{
+}
 
 /// `M`-by-`N` rectangular matrix with entries of type `T`.
 #[derive(Eq, PartialEq, Debug, Clone, Copy)]
@@ -288,136 +301,173 @@ impl<const M: usize, const N: usize, T: MatrixEntry + Mul<Output = T>> Mul<T> fo
     }
 }
 
-impl<
-        const M: usize,
-        const N: usize,
-        T: MatrixEntry + Div<Output = T> + Sub<Output = T> + Zero + One,
-    > RowOps<T> for Matrix<M, N, T>
-{
-    /// Swap rows `i` and `j` in place.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if `i` or `j` are out of bounds. That is `i>=M` or `j>=N`.
-    ///
-    /// ## Examples
-    ///
-    /// ```
-    /// # use::num_traits::*;
-    /// use malg::*;
-    /// let mut a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
-    /// let b = Matrix::<3,2,u8>::new([[1,2], [5,6], [3,4]]);
-    ///
-    /// a.swap_rows(1,2);
-    ///
-    /// assert_eq!(a,b)
-    /// ```
-    fn swap_rows(&mut self, i: usize, j: usize) {
-        self.data.swap(i, j);
-    }
-    /// Scale row `i` by scalar value `a` in place.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if `i` is out of bounds. That is `i>=M`.
-    ///
-    /// ## Examples
-    ///
-    /// ```
-    /// # use::num_traits::*;
-    /// use malg::*;
-    /// let mut a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
-    /// let b = Matrix::<3,2,u8>::new([[1,2], [6,8], [5,6]]);
-    ///
-    /// a.scale_row(1,2);
-    ///
-    /// assert_eq!(a,b)
-    ///
-    /// ```
-    ///
-    fn scale_row(&mut self, i: usize, a: T) {
-        self.data[i]
-            .iter_mut()
-            .for_each(|entry| *entry = *entry * a);
-    }
-    /// Replace row `i` with the sum of row `i` and `a` times row `j`.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if `i` or `j` are out of bounds. That is `i>=M` or `j>=N`.
-    ///
-    /// ## Examples
-    ///
-    /// ```
-    /// # use::num_traits::*;
-    /// use malg::*;
-    /// let mut a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
-    /// let b = Matrix::<3,2,u8>::new([[1,2], [3,4], [7,10]]);
-    ///
-    /// a.add_rows(2,0,2);
-    ///
-    /// assert_eq!(a,b)
-    ///
-    /// ```
-    ///
-    fn add_rows(&mut self, i: usize, j: usize, a: T) {
-        let add_row: Vec<T> = self.data[j].iter().map(|entry| *entry * a).collect();
-        self.data[i]
-            .iter_mut()
-            .zip(add_row)
-            .for_each(|(entry_i, entry_j): (&mut T, T)| *entry_i = *entry_i + entry_j);
-    }
-    /// The `ì`th row of `self`/
-    ///
-    /// ## Panics
-    ///
-    /// Panics if `i` is out of bounds. That is `i>=M`.
-    ///
-    /// ## Examples
-    ///
-    /// ```
-    /// # use::num_traits::*;
-    /// use malg::*;
-    /// let mut a = Matrix::<3,2,u8>::new([[1,2], [3,4], [5,6]]);
-    ///
-    /// let row = a.get_row(1);
-    ///
-    /// assert_eq!(row, vec![3, 4])
-    /// ```
-    fn get_row(&self, i: usize) -> Vec<T> {
-        self.data[i].into()
-    }
-    /// The number of rows in the matrix, `M`.
-    ///
-    /// # Examples
-    ///
-    /// Get the number of rows in a 3-by-4 rectangular `u8` matrix,
-    ///
-    /// ```
-    /// # use::num_traits::*;
-    /// use malg::*;
-    /// let a = Matrix::<3,4,u8>::zero();
-    /// let n_rows = a.n_rows();
-    /// assert_eq!(n_rows, 3);
-    /// ```
-    fn n_rows(&self) -> usize {
-        M
-    }
+impl<const M: usize, const N: usize, T: MatrixEntry + Div<Output = T>> Div<T> for Matrix<M, N, T> {
+    type Output = Matrix<M, N, T>;
 
-    /// The number of columns in the matrix, `N`.
+    /// Scale a matrix by post-dividing by a scalar value
     ///
     /// # Examples
     ///
-    /// Get the number of columns in a 3-by-4 rectangular `u8` matrix,
-    ///
     /// ```
-    /// # use::num_traits::*;
-    /// use malg::*;
-    /// let a = Matrix::<3,4,u8>::zero();
-    /// let n_cols = a.n_cols();
-    /// assert_eq!(n_cols, 4);
+    /// use malg::Matrix;
+    /// let a = Matrix::<2,3,u8>::new([[4, 2, 2], [2, 4, 6]]);
+    /// let b = a/2;
+    /// assert_eq!(b, Matrix::<2,3,u8>::new([[2, 1, 1], [1, 2, 3]]));
     /// ```
-    fn n_cols(&self) -> usize {
-        N
+    fn div(self, rhs: T) -> Self::Output {
+        let mut scaled = self.data;
+        for row in scaled.iter_mut() {
+            for entry in row.iter_mut() {
+                *entry = *entry / rhs
+            }
+        }
+        Matrix::<M, N, T>::new(scaled)
+    }
+}
+
+impl<const M: usize, const N: usize, T: ScalarMatrixEntry> RowOps<N, T> for Matrix<M, N, T> {
+    fn as_rows<'a>(&'a self) -> impl Iterator<Item = &'a [T; N]>
+    where
+        T: 'a,
+    {
+        self.data.iter()
+    }
+    fn as_mut_rows<'a>(&'a mut self) -> impl Iterator<Item = &'a mut [T; N]>
+    where
+        T: 'a,
+    {
+        self.data.iter_mut()
+    }
+    fn into_rows(self) -> impl Iterator<Item = [T; N]> {
+        self.data.into_iter()
+    }
+    fn from_rows(rows: impl Iterator<Item = [T; N]>) -> Option<Self> {
+        let data: [[T; N]; M] = rows.collect::<Vec<[T; N]>>().try_into().ok()?;
+        Some(Matrix::<M, N, T>::new(data))
+    }
+}
+
+/// `M`-by-`1` column vector with entries of type `T`.
+pub type ColumnVector<const M: usize, T> = Matrix<M, 1, T>;
+/// `1`-by-`N` row vector with entries of type `T`.
+pub type RowVector<const N: usize, T> = Matrix<1, N, T>;
+
+impl<const N: usize, T: ScalarMatrixEntry> Row<N, T> for RowVector<N, T> {
+    fn as_array(&self) -> &[T; N] {
+        &self.data[0]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::row_operations::*;
+    use crate::Matrix;
+    use num_traits::One;
+    use std::error::Error;
+    #[test]
+    fn check_is_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
+        let m = Matrix::<3, 3, i8>::new([[1, 2, 2], [0, 1, 3], [0, 0, 1]]);
+        assert!(m.is_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_is_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
+        let m = Matrix::<5, 2, i8>::new([[1, 2], [0, 1], [0, 0], [0, 0], [0, 0]]);
+        assert!(m.is_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_not_is_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<3, 3, i8>::new([[2, 2, 2], [0, 1, 3], [0, 0, 1]]);
+        assert!(!m1.is_row_echelon());
+        let m2 = Matrix::<3, 3, i8>::new([[1, 2, 2], [1, 1, 3], [0, 0, 1]]);
+        assert!(!m2.is_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_not_is_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<5, 2, i8>::new([[6, 2], [0, 1], [0, 0], [0, 0], [0, 0]]);
+        assert!(!m1.is_row_echelon());
+        let m2 = Matrix::<5, 2, i8>::new([[1, 2], [0, 1], [1, 0], [0, 0], [0, 0]]);
+        assert!(!m2.is_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<3, 3, f32>::new([[0.0, 2.0, 1.0], [1.0, 1.0, 0.0], [0.0, 0.0, 1.0]]);
+        print!("{:?}", m1.data);
+        let m2 = m1.into_row_echelon();
+        print!("{:?}", m2.data);
+        assert!(m2.into_row_echelon().is_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<4, 3, f32>::new([
+            [0.0, 0.34, 1.0],
+            [1.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [0.9, 12.0, 3.0],
+        ]);
+        print!("{:?}", m1.data);
+        let m2 = m1.into_row_echelon();
+        print!("{:?}", m2.data);
+        assert!(m2.into_row_echelon().is_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_is_reduced_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
+        let m = Matrix::<3, 3, i8>::new([[1, 0, 0], [0, 1, 0], [0, 0, 1]]);
+        assert!(m.is_reduced_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_is_reduced_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
+        let m = Matrix::<5, 2, i8>::new([[1, 0], [0, 1], [0, 0], [0, 0], [0, 0]]);
+        assert!(m.is_reduced_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_not_is_reduced_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<3, 3, i8>::new([[1, 2, 2], [0, 1, 3], [0, 0, 1]]);
+        assert!(!m1.is_reduced_row_echelon());
+        let m2 = Matrix::<3, 3, i8>::new([[1, 0, 2], [0, 0, 1], [0, 0, 0]]);
+        assert!(!m2.is_reduced_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_not_is_reduced_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<5, 2, i8>::new([[6, 2], [0, 1], [0, 0], [0, 0], [0, 0]]);
+        assert!(!m1.is_reduced_row_echelon());
+        let m2 = Matrix::<5, 2, i8>::new([[1, 2], [0, 1], [1, 0], [0, 0], [0, 0]]);
+        assert!(!m2.is_reduced_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_reduced_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<3, 3, f32>::new([[2.0, 1.0, 1.0], [0.0, 3.0, 0.0], [4.0, 0.0, 2.0]]);
+        let m2 = m1.into_reduced_row_echelon();
+        assert!(m2.is_reduced_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_reduced_row_echelon_form_full_rank() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<3, 3, f32>::new([[2.0, 2.0, 1.0], [1.0, 4.0, 1.0], [0.5, -1.0, -0.25]]);
+        let m2 = m1.into_reduced_row_echelon();
+        assert!(m2.is_reduced_row_echelon());
+        assert!(m2.is_one());
+        Ok(())
+    }
+    #[test]
+    fn check_reduced_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<4, 3, f32>::new([
+            [0.0, 0.34, 1.0],
+            [1.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [0.9, 12.0, 3.0],
+        ]);
+        let m2 = m1.into_reduced_row_echelon();
+        assert!(m2.into_row_echelon().is_reduced_row_echelon());
+        Ok(())
     }
 }
