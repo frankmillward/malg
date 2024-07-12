@@ -1,5 +1,6 @@
 use num_traits::{One, Signed, Zero};
 use std::{
+    fmt::Debug,
     num::NonZeroUsize,
     ops::{Add, Div, Mul, Sub},
 };
@@ -24,10 +25,10 @@ impl<T: Copy + Default + PartialEq> MatrixEntry for T {}
 
 /// Types implementing [`ScalarMatrixEntry`] are elements of a vector field.
 pub trait ScalarMatrixEntry:
-    MatrixEntry + Div<Output = Self> + Sub<Output = Self> + Zero + One + Signed
+    MatrixEntry + Div<Output = Self> + Sub<Output = Self> + Zero + One + Signed + Debug
 {
 }
-impl<T: MatrixEntry + Div<Output = Self> + Sub<Output = Self> + Zero + One + Signed>
+impl<T: MatrixEntry + Div<Output = Self> + Sub<Output = Self> + Zero + One + Signed + Debug>
     ScalarMatrixEntry for T
 {
 }
@@ -331,6 +332,7 @@ impl<const M: usize, const N: usize, T: ScalarMatrixEntry> RowOps<N, T> for Matr
 mod tests {
     use crate::row_operations::*;
     use crate::Matrix;
+    use num_traits::One;
     use std::error::Error;
     #[test]
     fn check_is_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
@@ -409,6 +411,33 @@ mod tests {
         assert!(!m1.is_reduced_row_echelon());
         let m2 = Matrix::<5, 2, i8>::new([[1, 2], [0, 1], [1, 0], [0, 0], [0, 0]]);
         assert!(!m2.is_reduced_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_reduced_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<3, 3, f32>::new([[2.0, 1.0, 1.0], [0.0, 3.0, 0.0], [4.0, 0.0, 2.0]]);
+        let m2 = m1.into_reduced_row_echelon();
+        assert!(m2.is_reduced_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_reduced_row_echelon_form_full_rank() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<3, 3, f32>::new([[2.0, 2.0, 1.0], [1.0, 4.0, 1.0], [0.5, -1.0, -0.25]]);
+        let m2 = m1.into_reduced_row_echelon();
+        assert!(m2.is_reduced_row_echelon());
+        assert!(m2.is_one());
+        Ok(())
+    }
+    #[test]
+    fn check_reduced_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<4, 3, f32>::new([
+            [0.0, 0.34, 1.0],
+            [1.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [0.9, 12.0, 3.0],
+        ]);
+        let m2 = m1.into_reduced_row_echelon();
+        assert!(m2.into_row_echelon().is_reduced_row_echelon());
         Ok(())
     }
 }
