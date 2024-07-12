@@ -33,11 +33,6 @@ impl<T: MatrixEntry + Div<Output = Self> + Sub<Output = Self> + Zero + One + Sig
 {
 }
 
-/// `1`-by-`N` column vector with entries of type `T`.
-pub type ColumnVector<const N: usize, T> = Matrix<1, N, T>;
-/// `M`-by-`1` row vector with entries of type `T`.
-pub type RowVector<const N: usize, T> = Matrix<N, 1, T>;
-
 /// `M`-by-`N` rectangular matrix with entries of type `T`.
 #[derive(Eq, PartialEq, Debug, Clone, Copy)]
 pub struct Matrix<const M: usize, const N: usize, T: MatrixEntry> {
@@ -306,6 +301,30 @@ impl<const M: usize, const N: usize, T: MatrixEntry + Mul<Output = T>> Mul<T> fo
     }
 }
 
+impl<const M: usize, const N: usize, T: MatrixEntry + Div<Output = T>> Div<T> for Matrix<M, N, T> {
+    type Output = Matrix<M, N, T>;
+
+    /// Scale a matrix by post-dividing by a scalar value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use malg::Matrix;
+    /// let a = Matrix::<2,3,u8>::new([[4, 2, 2], [2, 4, 6]]);
+    /// let b = a/2;
+    /// assert_eq!(b, Matrix::<2,3,u8>::new([[2, 1, 1], [1, 2, 3]]));
+    /// ```
+    fn div(self, rhs: T) -> Self::Output {
+        let mut scaled = self.data;
+        for row in scaled.iter_mut() {
+            for entry in row.iter_mut() {
+                *entry = *entry / rhs
+            }
+        }
+        Matrix::<M, N, T>::new(scaled)
+    }
+}
+
 impl<const M: usize, const N: usize, T: ScalarMatrixEntry> RowOps<N, T> for Matrix<M, N, T> {
     fn as_rows<'a>(&'a self) -> impl Iterator<Item = &'a [T; N]>
     where
@@ -325,6 +344,17 @@ impl<const M: usize, const N: usize, T: ScalarMatrixEntry> RowOps<N, T> for Matr
     fn from_rows(rows: impl Iterator<Item = [T; N]>) -> Option<Self> {
         let data: [[T; N]; M] = rows.collect::<Vec<[T; N]>>().try_into().ok()?;
         Some(Matrix::<M, N, T>::new(data))
+    }
+}
+
+/// `M`-by-`1` column vector with entries of type `T`.
+pub type ColumnVector<const M: usize, T> = Matrix<M, 1, T>;
+/// `1`-by-`N` row vector with entries of type `T`.
+pub type RowVector<const N: usize, T> = Matrix<1, N, T>;
+
+impl<const N: usize, T: ScalarMatrixEntry> Row<N, T> for RowVector<N, T> {
+    fn as_array(&self) -> &[T; N] {
+        &self.data[0]
     }
 }
 

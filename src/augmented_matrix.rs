@@ -1,3 +1,6 @@
+use std::ops::{Add, Div, Mul, Sub};
+
+use crate::{row_operations::*, ScalarMatrixEntry};
 use crate::{Matrix, MatrixEntry};
 
 /// `M`-by-`(N+P)` rectangular matrix `[A|B]` formed by augmenting a `M`-by-`N` matrix `A` with a `M`-by-`P` matrix `B`.
@@ -21,3 +24,14 @@ impl<const M: usize, const N: usize, const P: usize, T: MatrixEntry> AugmentedMa
         &self.right
     }
 }
+
+// /// `1`-by-`N+P` row vector with entries of type `T`.
+// pub type AugmentedRowVector<const N: usize, const P: usize, T> = AugmentedMatrix<1, N, P, T>;
+
+// impl<const N: usize, const P: usize, T: ScalarMatrixEntry> Row<N, T>
+//     for AugmentedRowVector<N, P, T>
+// {
+//     fn as_array(&self) -> &[T; N] {
+//         &self.data[0]
+//     }
+// }

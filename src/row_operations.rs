@@ -1,5 +1,6 @@
 use crate::ScalarMatrixEntry;
 use num_traits::Zero;
+use std::ops::{Add, Div, Mul, Sub};
 
 // TODO: Row or RowVector struct which can be used to tighten up RowOps API
 
@@ -111,4 +112,9 @@ pub trait RowOps<const N: usize, T: ScalarMatrixEntry>: Sized {
         }
         Self::from_rows(rows.into_iter()).unwrap()
     }
+}
+
+/// A row vector
+pub trait Row<const N: usize, T: ScalarMatrixEntry>: Add + Sub + Div<T> + Mul<T> + Sized {
+    fn as_array(&self) -> &[T; N];
 }
