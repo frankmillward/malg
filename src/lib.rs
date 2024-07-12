@@ -1,4 +1,4 @@
-use num_traits::{One, Zero};
+use num_traits::{One, Signed, Zero};
 use std::{
     num::NonZeroUsize,
     ops::{Add, Div, Mul, Sub},
@@ -17,8 +17,25 @@ mod augmented_matrix;
 pub use augmented_matrix::*;
 
 /// Minimum trait bounds for a type to be extendable as a [`Matrix`].
+///
+/// Types implementing [`MatrixEntry`] may be considered as elements of a set.
 pub trait MatrixEntry: Copy + Default + PartialEq {}
 impl<T: Copy + Default + PartialEq> MatrixEntry for T {}
+
+/// Types implementing [`ScalarMatrixEntry`] are elements of a vector field.
+pub trait ScalarMatrixEntry:
+    MatrixEntry + Div<Output = Self> + Sub<Output = Self> + Zero + One + Signed
+{
+}
+impl<T: MatrixEntry + Div<Output = Self> + Sub<Output = Self> + Zero + One + Signed>
+    ScalarMatrixEntry for T
+{
+}
+
+/// `1`-by-`N` column vector with entries of type `T`.
+pub type ColumnVector<const N: usize, T> = Matrix<1, N, T>;
+/// `M`-by-`1` row vector with entries of type `T`.
+pub type RowVector<const N: usize, T> = Matrix<N, 1, T>;
 
 /// `M`-by-`N` rectangular matrix with entries of type `T`.
 #[derive(Eq, PartialEq, Debug, Clone, Copy)]
@@ -288,7 +305,7 @@ impl<const M: usize, const N: usize, T: MatrixEntry + Mul<Output = T>> Mul<T> fo
     }
 }
 
-impl<const M: usize, const N: usize, T: Scalar> RowOps<N, T> for Matrix<M, N, T> {
+impl<const M: usize, const N: usize, T: ScalarMatrixEntry> RowOps<N, T> for Matrix<M, N, T> {
     fn as_rows<'a>(&'a self) -> impl Iterator<Item = &'a [T; N]>
     where
         T: 'a,
@@ -317,29 +334,29 @@ mod tests {
     use std::error::Error;
     #[test]
     fn check_is_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
-        let m = Matrix::<3, 3, u8>::new([[1, 2, 2], [0, 1, 3], [0, 0, 1]]);
+        let m = Matrix::<3, 3, i8>::new([[1, 2, 2], [0, 1, 3], [0, 0, 1]]);
         assert!(m.is_row_echelon());
         Ok(())
     }
     #[test]
     fn check_is_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
-        let m = Matrix::<5, 2, u8>::new([[1, 2], [0, 1], [0, 0], [0, 0], [0, 0]]);
+        let m = Matrix::<5, 2, i8>::new([[1, 2], [0, 1], [0, 0], [0, 0], [0, 0]]);
         assert!(m.is_row_echelon());
         Ok(())
     }
     #[test]
     fn check_not_is_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
-        let m1 = Matrix::<3, 3, u8>::new([[2, 2, 2], [0, 1, 3], [0, 0, 1]]);
+        let m1 = Matrix::<3, 3, i8>::new([[2, 2, 2], [0, 1, 3], [0, 0, 1]]);
         assert!(!m1.is_row_echelon());
-        let m2 = Matrix::<3, 3, u8>::new([[1, 2, 2], [1, 1, 3], [0, 0, 1]]);
+        let m2 = Matrix::<3, 3, i8>::new([[1, 2, 2], [1, 1, 3], [0, 0, 1]]);
         assert!(!m2.is_row_echelon());
         Ok(())
     }
     #[test]
     fn check_not_is_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
-        let m1 = Matrix::<5, 2, u8>::new([[6, 2], [0, 1], [0, 0], [0, 0], [0, 0]]);
+        let m1 = Matrix::<5, 2, i8>::new([[6, 2], [0, 1], [0, 0], [0, 0], [0, 0]]);
         assert!(!m1.is_row_echelon());
-        let m2 = Matrix::<5, 2, u8>::new([[1, 2], [0, 1], [1, 0], [0, 0], [0, 0]]);
+        let m2 = Matrix::<5, 2, i8>::new([[1, 2], [0, 1], [1, 0], [0, 0], [0, 0]]);
         assert!(!m2.is_row_echelon());
         Ok(())
     }
@@ -364,6 +381,34 @@ mod tests {
         let m2 = m1.into_row_echelon();
         print!("{:?}", m2.data);
         assert!(m2.into_row_echelon().is_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_is_reduced_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
+        let m = Matrix::<3, 3, i8>::new([[1, 0, 0], [0, 1, 0], [0, 0, 1]]);
+        assert!(m.is_reduced_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_is_reduced_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
+        let m = Matrix::<5, 2, i8>::new([[1, 0], [0, 1], [0, 0], [0, 0], [0, 0]]);
+        assert!(m.is_reduced_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_not_is_reduced_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<3, 3, i8>::new([[1, 2, 2], [0, 1, 3], [0, 0, 1]]);
+        assert!(!m1.is_reduced_row_echelon());
+        let m2 = Matrix::<3, 3, i8>::new([[1, 0, 2], [0, 0, 1], [0, 0, 0]]);
+        assert!(!m2.is_reduced_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_not_is_reduced_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<5, 2, i8>::new([[6, 2], [0, 1], [0, 0], [0, 0], [0, 0]]);
+        assert!(!m1.is_reduced_row_echelon());
+        let m2 = Matrix::<5, 2, i8>::new([[1, 2], [0, 1], [1, 0], [0, 0], [0, 0]]);
+        assert!(!m2.is_reduced_row_echelon());
         Ok(())
     }
 }

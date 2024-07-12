@@ -1,14 +1,9 @@
-use num_traits::{One, Zero};
-use std::ops::{Div, Sub};
+use crate::ScalarMatrixEntry;
 
-use crate::MatrixEntry;
+// TODO: Row or RowVector struct which can be used to tighten up RowOps API
 
-pub trait Scalar: MatrixEntry + Div<Output = Self> + Sub<Output = Self> + Zero + One {}
-impl<T: MatrixEntry + Div<Output = Self> + Sub<Output = Self> + Zero + One> Scalar for T {}
-
-/// Provides a set of elementary row operations for an object, where elements of the object are scaled by type `Scalar`
-/// pub trait RowOps<Scalar: MatrixEntry + Div<Output = Scalar> + Sub<Output = Scalar> + Zero + One> {
-pub trait RowOps<const N: usize, T: Scalar>: Sized {
+/// Behaviours associated with an object constructed of [`RowVector`](`crate::RowVector`)s
+pub trait RowOps<const N: usize, T: ScalarMatrixEntry>: Sized {
     /// The rows of `self`.
     fn as_rows<'a>(&'a self) -> impl Iterator<Item = &'a [T; N]>
     where
@@ -38,6 +33,24 @@ pub trait RowOps<const N: usize, T: Scalar>: Sized {
             }
         }
         is_row_echelon
+    }
+    /// True if `self` is in reduced row echelon form.
+    fn is_reduced_row_echelon(&self) -> bool {
+        if self.is_row_echelon() {
+            let mut is_reduced_row_echelon = true;
+            for column_index in 0..N {
+                let column_sum = self
+                    .as_rows()
+                    .fold(T::zero(), |acc, x| acc + x[column_index].abs());
+                if !(column_sum.is_zero() || column_sum.is_one()) {
+                    is_reduced_row_echelon = false;
+                    break;
+                }
+            }
+            is_reduced_row_echelon
+        } else {
+            false
+        }
     }
     /// `self` in row echelon form.
     fn into_row_echelon(self) -> Self {
