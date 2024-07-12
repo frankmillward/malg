@@ -288,12 +288,7 @@ impl<const M: usize, const N: usize, T: MatrixEntry + Mul<Output = T>> Mul<T> fo
     }
 }
 
-impl<
-        const M: usize,
-        const N: usize,
-        T: MatrixEntry + Div<Output = T> + Sub<Output = T> + Zero + One,
-    > RowOps<N, T> for Matrix<M, N, T>
-{
+impl<const M: usize, const N: usize, T: Scalar> RowOps<N, T> for Matrix<M, N, T> {
     fn as_rows<'a>(&'a self) -> impl Iterator<Item = &'a [T; N]>
     where
         T: 'a,
@@ -306,6 +301,13 @@ impl<
     {
         self.data.iter_mut()
     }
+    fn into_rows(self) -> impl Iterator<Item = [T; N]> {
+        self.data.into_iter()
+    }
+    fn from_rows(rows: impl Iterator<Item = [T; N]>) -> Option<Self> {
+        let data: [[T; N]; M] = rows.collect::<Vec<[T; N]>>().try_into().ok()?;
+        Some(Matrix::<M, N, T>::new(data))
+    }
 }
 
 #[cfg(test)]
@@ -314,19 +316,19 @@ mod tests {
     use crate::Matrix;
     use std::error::Error;
     #[test]
-    fn check_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
+    fn check_is_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
         let m = Matrix::<3, 3, u8>::new([[1, 2, 2], [0, 1, 3], [0, 0, 1]]);
         assert!(m.is_row_echelon());
         Ok(())
     }
     #[test]
-    fn check_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
+    fn check_is_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
         let m = Matrix::<5, 2, u8>::new([[1, 2], [0, 1], [0, 0], [0, 0], [0, 0]]);
         assert!(m.is_row_echelon());
         Ok(())
     }
     #[test]
-    fn check_not_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
+    fn check_not_is_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
         let m1 = Matrix::<3, 3, u8>::new([[2, 2, 2], [0, 1, 3], [0, 0, 1]]);
         assert!(!m1.is_row_echelon());
         let m2 = Matrix::<3, 3, u8>::new([[1, 2, 2], [1, 1, 3], [0, 0, 1]]);
@@ -334,11 +336,34 @@ mod tests {
         Ok(())
     }
     #[test]
-    fn check_not_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
+    fn check_not_is_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
         let m1 = Matrix::<5, 2, u8>::new([[6, 2], [0, 1], [0, 0], [0, 0], [0, 0]]);
         assert!(!m1.is_row_echelon());
         let m2 = Matrix::<5, 2, u8>::new([[1, 2], [0, 1], [1, 0], [0, 0], [0, 0]]);
         assert!(!m2.is_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_row_echelon_form_square() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<3, 3, f32>::new([[0.0, 2.0, 1.0], [1.0, 1.0, 0.0], [0.0, 0.0, 1.0]]);
+        print!("{:?}", m1.data);
+        let m2 = m1.into_row_echelon();
+        print!("{:?}", m2.data);
+        assert!(m2.into_row_echelon().is_row_echelon());
+        Ok(())
+    }
+    #[test]
+    fn check_row_echelon_form_rectangular() -> Result<(), Box<dyn Error>> {
+        let m1 = Matrix::<4, 3, f32>::new([
+            [0.0, 0.34, 1.0],
+            [1.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [0.9, 12.0, 3.0],
+        ]);
+        print!("{:?}", m1.data);
+        let m2 = m1.into_row_echelon();
+        print!("{:?}", m2.data);
+        assert!(m2.into_row_echelon().is_row_echelon());
         Ok(())
     }
 }
